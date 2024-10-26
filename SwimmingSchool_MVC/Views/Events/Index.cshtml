@@ -1,0 +1,154 @@
+﻿@model IEnumerable<SwimmingSchool_MVC.Models.Event>
+
+@{
+    ViewData["Title"] = "Події";
+}
+
+<h1 class="text-center my-4">Події</h1>
+
+<div class="d-flex justify-content-between align-items-center" style="padding-block-end: 10px">
+    <a asp-action="Create" class="btn btn-outline-success">Створити нову подію</a>
+    <form asp-action="CheckEvent" method="post" class="ml-auto">
+        <input type="submit" value="Перевірити події" class="btn btn-outline-dark" />
+    </form>
+</div>
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    @foreach (var item in Model)
+    {
+        <div class="col event-card" data-location="@item.Locations" data-held="@item.IsHeld" data-id="@item.Id">
+            <div class="card h-100 shadow-sm">
+                @if (item.Logo != null)
+                {
+                    <img src="@Url.Action("GetLogo", "Events", new { id = item.Id })" class="card-img-top" alt="Логотип події" style="height: 200px; object-fit: cover;" />
+                }
+                else
+                {
+                    <div class="card-img-top bg-secondary text-white text-center" style="height: 200px; display: flex; align-items: center; justify-content: center;">
+                        <span>Без логотипу</span>
+                    </div>
+                }
+
+                <div class="card-body">
+                    <h5 class="card-title">@item.Name</h5>
+                    <p class="card-text"><strong>Дата:</strong> @item.Date.ToShortDateString()</p>
+                    <p class="card-text"><strong>Максимальна кількість учнів:</strong> @item.MaxPupilsAmount</p>
+                    <p class="card-text"><strong>Місце проведення:</strong> @item.Locations</p>
+                    <p class="card-text">@item.Description</p>
+                    @if (item.IsHeld)
+                    {
+                        <span class="badge bg-success">Проведено</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark">Не проведено</span>
+                    }
+                </div>
+
+                <div class="card-footer bg-transparent border-0">
+                    <div class="dropdown dropup text-end">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                            Дії
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                            <li><a class="dropdown-item" asp-action="Edit" asp-route-id="@item.Id">Редагувати</a></li>
+                            <li><a class="dropdown-item" asp-action="Details" asp-route-id="@item.Id">Деталі</a></li>
+                            <li><a class="dropdown-item" asp-action="Delete" asp-route-id="@item.Id">Видалити</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Фільтри для подій -->
+<div class="d-flex justify-content-end mb-4" style="padding-top:10px">
+    <div class="form-check form-check-inline">
+        <input class="form-check-input" type="checkbox" id="futureEvents" checked>
+        <label class="form-check-label" for="futureEvents">Майбутні події</label>
+    </div>
+    <div class="form-check form-check-inline">
+        <input class="form-check-input" type="checkbox" id="pastEvents">
+        <label class="form-check-label" for="pastEvents">Минулі події</label>
+    </div>
+</div>
+
+<!-- Контейнер для карти -->
+<div id="map" style="height: 500px; margin-bottom: 20px;"></div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([50.4501, 30.5234], 12); // Центр на Київ
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        var markers = [];
+        var eventCoordinates = @Html.Raw(Json.Serialize(ViewBag.EventCoordinates));
+
+        console.log("Event coordinates:", eventCoordinates); // Лог для перевірки
+
+
+        // Функція для створення міток на карті з використанням геокодування адрес
+        function createMarkers() {
+            // Очищуємо попередні мітки
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+
+            // Отримуємо стан чекбоксів
+            var showFutureEvents = document.getElementById('futureEvents').checked;
+            var showPastEvents = document.getElementById('pastEvents').checked;
+
+            // Проходимо по кожній події і виконуємо геокодування адреси
+            document.querySelectorAll('.event-card').forEach(card => {
+                var location = card.getAttribute('data-location');
+                var isHeld = card.getAttribute('data-held') === "True";
+                var eventId = card.getAttribute('data-id').toString(); // Приводимо до рядка
+                if (eventCoordinates[eventId] === undefined) {
+                    console.warn(`Coordinates for event ID ${eventId} are missing in ViewBag.`);
+                }
+                // Фільтруємо події на основі чекбоксів
+                if ((isHeld && showPastEvents) || (!isHeld && showFutureEvents)) {
+                    if (eventCoordinates[eventId]) {
+                        var coordinates = eventCoordinates[eventId];
+                        var lat = parseFloat(coordinates.lat);
+                        var lng = parseFloat(coordinates.lng);
+
+                        // Перевіряємо, чи координати дійсно визначені
+                        if (!isNaN(lat) && !isNaN(lng)) {
+                            var iconUrl = isHeld
+                                ? '@Url.Content("~/assets/pin-map.png")'
+                                : '@Url.Content("~/assets/pin-map-red.png")';
+
+                            var marker = L.marker([lat, lng], {
+                                icon: L.icon({
+                                    iconUrl: iconUrl,
+                                    iconSize: [25, 41],
+                                    iconAnchor: [12, 41],
+                                    popupAnchor: [1, -34],
+                                    shadowSize: [41, 41]
+                                })
+                            }).addTo(map);
+
+                            marker.on('click', function () {
+                                window.location.href = `@Url.Action("Details", "Events", new { id = "" })/${eventId}`;
+                            });
+
+                            markers.push(marker);
+                        } else {
+                            console.warn(`Invalid coordinates for event ID ${eventId}: (${coordinates.lat}, ${coordinates.lng})`);
+                        }
+                    }
+                }
+            });
+        }
+        // Додаємо обробник подій для чекбоксів
+        document.getElementById('futureEvents').addEventListener('change', createMarkers);
+        document.getElementById('pastEvents').addEventListener('change', createMarkers);
+
+        // Створюємо мітки на карті при завантаженні сторінки
+        createMarkers();
+    </script>
+}

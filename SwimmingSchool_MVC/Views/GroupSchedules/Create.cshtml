@@ -1,0 +1,47 @@
+﻿@model SwimmingSchool_MVC.Models.GroupSchedule
+
+@{
+    ViewData["Title"] = "Create";
+}
+<link rel="stylesheet" href="~/css/Create.css" />
+<h1>Create</h1>
+
+<h4>GroupSchedule</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="GroupId" class="control-label"></label>
+                <select asp-for="GroupId" class ="form-control" asp-items="ViewBag.GroupId"></select>
+            </div>
+            <div class="form-group">
+                <label asp-for="DayId" class="control-label"></label>
+                <select asp-for="DayId" class ="form-control" asp-items="ViewBag.DayId"></select>
+                @Html.ValidationMessageFor(model => model.DayId, "", new { @class = "text-danger" })
+            </div>
+            <div class="form-group">
+                <label asp-for="TimeOfTrainingStart" class="control-label"></label>
+                <input asp-for="TimeOfTrainingStart" class="form-control" type="time" />
+                <span asp-validation-for="TimeOfTrainingStart" class="text-danger" ></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="TrainingTime" class="control-label"></label>
+                <input asp-for="TrainingTime" class="form-control" />
+                <span asp-validation-for="TrainingTime" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

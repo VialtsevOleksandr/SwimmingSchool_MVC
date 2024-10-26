@@ -1,0 +1,160 @@
+﻿@model SwimmingSchool_MVC.Models.Event
+
+@{
+    ViewData["Title"] = "Event Details";
+}
+
+<div class="container py-5">
+    <!-- Карточка з інформацією про подію -->
+    <div class="card shadow-lg p-4">
+        <div class="row align-items-center">
+            <!-- Логотип події -->
+            <div class="col-md-4 text-center">
+                @if (Model.Logo != null && Model.Logo.Length > 0)
+                {
+                    <img src="@Url.Action("GetLogo", "Events", new { id = Model.Id })" alt="Logo" class="img-fluid rounded-circle border" style="max-height: 200px;" />
+                }
+            </div>
+
+            <!-- Основна інформація про подію -->
+            <div class="col-md-8">
+                <h1>@Html.DisplayFor(model => model.Name)</h1>
+                <hr />
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h5>Дата проведення:</h5>
+                        <p>@Html.DisplayFor(model => model.Date)</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Макс. кількість учнів:</h5>
+                        <p>@Html.DisplayFor(model => model.MaxPupilsAmount)</p>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h5>Місце проведення:</h5>
+                        <p>@Html.DisplayFor(model => model.Locations)</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Статус проведення:</h5>
+                        <p>@(Model.IsHeld ? "Так" : "Ні")</p>
+                    </div>
+                </div>
+
+                <h5>Опис події:</h5>
+                <p>@Html.DisplayFor(model => model.Description)</p>
+            </div>
+        </div>
+
+        <hr />
+
+        <!-- Розпорядження -->
+        <div>
+            <h5>Розпорядження:</h5>
+            <p>@Html.DisplayFor(model => model.Decree)</p>
+        </div>
+
+        <!-- Дії -->
+        <div class="d-flex justify-content-center gap-2 mt-4">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-warning rounded-pill">Редагувати</a>
+            <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-outline-danger rounded-pill">Видалити</a>
+        </div>
+    </div>
+
+
+    <!-- Зареєстровані учні (картки) -->
+    <h4 class="mt-5 mb-4 text-center">
+        Зареєстровані учні
+        @if (!Model.IsHeld)
+        {
+            <span>
+                |
+                <a asp-controller="PupilsEvents" asp-action="Create" asp-route-eventId="@Model.Id" class="btn btn-outline-success">Зареєструвати нового учня</a>
+            </span>
+        }
+    </h4>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        @foreach (var pupil in Model.PupilsEvents)
+        {
+            <div class="col">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">@pupil.Pupils.LastName @pupil.Pupils.FirstName @pupil.Pupils.MiddleName</h5>
+                        <p class="card-text">
+                            <strong>Дата народження:</strong> @pupil.Pupils.Birthday <br />
+                            <strong>Номер телефону батьків:</strong> @pupil.Pupils.ParentsPhoneNumber <br />
+                            <strong>Група:</strong> @pupil.Pupils.Group.GroupName <br />
+                            <strong>Тренер групи:</strong> @pupil.Pupils.Group.Trainer.LastName @pupil.Pupils.Group.Trainer.FirstName<br />
+                            <strong>Статус:</strong> @pupil.Info <br />
+                            <strong>Результат:</strong> @pupil.Result
+                        </p>
+                    </div>
+                    <div class="card-footer d-flex justify-content-center gap-2">
+                        <a asp-controller="PupilsEvents" asp-action="Edit" asp-route-eventId="@pupil.EventId" asp-route-pupilsId="@pupil.PupilsId" class="btn btn-warning btn-sm rounded-pill">Редагувати</a>
+                        <a asp-controller="PupilsEvents" asp-action="Delete" asp-route-eventId="@pupil.EventId" asp-route-pupilsId="@pupil.PupilsId" class="btn btn-danger btn-sm rounded-pill">Видалити</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger mt-4">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <!-- Статистика реєстрацій -->
+    <h4 class="text-center mt-5">Статистика реєстрацій</h4>
+    <canvas id="trainerPupilChart" height="150"></canvas>
+</div>
+
+<footer class="fixed-bottom bg-dark text-white py-3">
+    <div class="container text-center">
+        <p>Контакти: +38 (096) 123-45-67 | Email: info@gmail.com</p>
+    </div>
+</footer>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const eventId = '@Model.Id';
+    const url = `@Url.Action("TrainerPupilStats", "Events")?eventId=${eventId}`;
+
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            const ctx = document.getElementById('trainerPupilChart').getContext('2d');
+            const labels = data.map(item => item.trainerName);
+            const pupilCounts = data.map(item => item.pupilCount);
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Кількість учнів на подіях',
+                        data: pupilCounts,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+        });
+</script>

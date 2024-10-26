@@ -1,0 +1,25 @@
+﻿/* Налаштування відступів між полями форми */
+.form-group {
+    margin-bottom: 5px;
+}
+
+/* Налаштування відступів для самої форми */
+form {
+    padding: 5px;
+    margin-top: 5px;
+}
+
+/* Налаштування відступів для кнопки */
+.btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+}
+
+/* Відступ між рядками (row) та заголовками */
+h1, h4 {
+    margin-bottom: 5px;
+}
+
+.row {
+    margin-bottom: 5px;
+}
