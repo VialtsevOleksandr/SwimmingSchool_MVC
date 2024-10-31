@@ -29,7 +29,7 @@ public partial class Pupil
 
     [Required(ErrorMessage = "Поле не може бути порожнім")]
     [Display(Name = "Номер телефону батьків")]
-    //[RegularExpression(@"^\+380\d{9}$", ErrorMessage = "Номер телефону має бути у форматі +380XXXXXXXXX")]
+    [RegularExpression(@"^\+380\d{9}$", ErrorMessage = "Номер телефону має бути у форматі +380XXXXXXXXX")]
     public string ParentsPhoneNumber { get; set; } = null!;
 
     [Required(ErrorMessage = "Поле не може бути порожнім")]

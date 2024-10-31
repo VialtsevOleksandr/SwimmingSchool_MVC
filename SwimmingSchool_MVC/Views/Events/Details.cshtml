@@ -51,8 +51,17 @@
 
         <!-- Розпорядження -->
         <div>
-            <h5>Розпорядження:</h5>
-            <p>@Html.DisplayFor(model => model.Decree)</p>
+            <h5>
+                Розпорядження:
+                @if (Uri.IsWellFormedUriString(Model.Decree, UriKind.Absolute))
+                {
+                    <a href="@Model.Decree" target="_blank">посилання</a>
+                }
+                else
+                {
+                    @Html.DisplayFor(model => model.Decree)
+                }
+            </h5>
         </div>
 
         <!-- Дії -->

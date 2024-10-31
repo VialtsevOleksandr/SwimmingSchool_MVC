@@ -203,11 +203,6 @@ namespace SwimmingSchool_MVC.Controllers
                     ModelState.AddModelError("MaxPupilsAmount", "Кількість учасників повинна бути більше 0");
                     return View(@event);
                 }
-                if (@event.Date < DateTime.Now)
-                {
-                    ModelState.AddModelError("Date", "Дата не може бути в минулому");
-                    return View(@event);
-                }
 
                 try
                 {
